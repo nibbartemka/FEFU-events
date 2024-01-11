@@ -1,0 +1,108 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel = "stylesheet" type = "text/css" href = "/static/css/style.css" />
+        <title> Запись на мероприятие </title>
+
+        {% macro render_checkboxes(relation, vis_field, val_field, selected_id) %}
+            {% for i in range(len(relation))%}
+                <div class="flex row">
+                    {{relation.loc[i, vis_field]}}
+                    <input 
+                        type="checkbox" 
+                        name="role" 
+                        value="{{relation.loc[i,val_field]}}"
+                        {% if relation.loc[i,val_field] in selected_id %} checked="checked" {% endif %}
+                    />
+                </div>
+            {% endfor %}
+        {% endmacro %}
+
+        {% macro render_events(df_events, register_event_id, register_role_id) %}
+            {% for i in range(len(df_events)) %}
+                <div class="flex column width30 padding10px">
+                    Название: {{df_events.loc[i, "event_name"]}}<br>
+                    Дата проведения: {{df_events.loc[i, "event_date"]}}<br>
+                    Роль: {{df_events.loc[i, "role_name"]}}<br>
+                    Количество участников: {{df_events.loc[i, "worker_count"]}}/{{df_events.loc[i,"role_amount"]}}<br>
+                    <form action='' method ="post">
+                        <input hidden value="{{df_events.loc[i, 'event_id']}}" name="event_id" type="number">
+                        <input hidden value="{{df_events.loc[i, 'role_id']}}" name="role_id"  type="number">
+                        <input type="date" min="{{min_date}}" value="{{date_from}}" name="date_from" hidden />   
+                        <input type="date" min="{{min_date}}" value="{{date_to}}" name="date_to" hidden/>
+                        <input type="text" value="{{selected_roles}}" name="role" hidden/>
+                        <p>
+                            {% if register_role_id == df_events.loc[i, 'role_id'] and register_event_id == df_events.loc[i, 'event_id']%}
+                            <p>
+                                <label>
+                                    Номер телефона:
+                                    <input type="text" maxlength="11" name="worker_id"/><input type="submit" name="register" value="Зарегистрироваться" />
+                                </label> 
+                            </p>    
+                            {% else %}
+                                <input 
+                                    type="submit" 
+                                    value="Зарегистрироваться" 
+                                    {% if df_events.loc[i, "worker_count"] == df_events.loc[i,"role_amount"] %} 
+                                        disabled="disabled" 
+                                    {% endif %}
+                                    name="enter"
+                                />
+                            {% endif %}
+                        </p>
+                    </form> 
+                </div> 
+            {% endfor %}
+        {% endmacro %}
+
+    </head>
+    <body>
+        <div class = "menu">
+            <ul>
+                <li>
+                    <a href = {{ url_for("index") }}>
+                        Организовать мероприятие
+                    </a>
+                </li>
+                <li class="active">
+                    <a href = {{ url_for("register_event") }}>
+                        Запись на мероприятие
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class = "block">
+            <form action="" method="post">
+                <div class="flex row">
+                    <div class="flex column width15 padding10px">
+                        <div class="flex column padding10px">
+                            <h3>Роли:</h3>
+                            {{ render_checkboxes(df_roles, 'role_name', 'role_id', selected_roles) }}
+                        </div>
+                        <p></p>
+                        <div class="flex column padding10px">
+                            <h3>Диапазон дат:</h3>
+                            <label>от
+                                <input type="date" min="{{min_date}}" value="{{date_from}}" name="date_from" />
+                            </label>
+                            <label>до
+                                <input type="date" min="{{min_date}}" value="{{date_to}}" name="date_to" />
+                            </label>
+                        </div>
+                        <p></p>
+                        <input type="submit" name="find" value="Найти" />
+                    </form>
+                    </div>
+                    <div class="flex column width85 padding10px">
+                        <h3>Мероприятия:</h3>
+                        {% if action_response %}
+                            <p>{{ action_response }}</p>
+                        {% endif %}
+                        <div class="flex row wrap">
+                            {{ render_events(df_events, register_event_id, register_role_id) }}
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </body>
+</html>

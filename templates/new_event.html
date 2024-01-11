@@ -1,0 +1,171 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel = "stylesheet" type = "text/css" href = "/static/css/style.css" />
+        <title> Новое мероприятие </title>
+
+        {% macro render_multiple_select(select_name, vis_field, val_field, combo_box, selected_id) %}
+            <select name='{{select_name}}' class='select_table' size='{{len(combo_box)}}'  multiple>          
+                {% for i in range(len(combo_box)) %}   
+                    <option 
+                        value="{{ combo_box.loc[i, val_field] }}" 
+                        {% if combo_box.loc[i, val_field] in selected_id %} selected {% endif %}>
+                        {{combo_box.loc[i, vis_field]}}
+                    </option>          
+                {% endfor %}         
+            </select> 
+        {% endmacro %}
+
+        {% macro render_number_input(df_roles, entered_data) %}
+            {% for i in range(len(df_roles)) %}
+                <p>{{ df_roles.loc[i, 'role_name'] }}
+                    <input 
+                        name="{{ df_roles.loc[i, 'role_id']}}" 
+                        type="number" 
+                        min="0" 
+                        value="{{entered_data[df_roles.loc[i, 'role_id']]}}" 
+                        /></p>
+            {% endfor %}
+        {% endmacro %}
+
+        {% macro render_table_date_room(df_date_room, df_free_rooms, selected_date) %}
+            {% set n = len(df_date_room) %}
+            <table class="table">
+                <tr>
+                    <th>Даты</th>
+                    <th>Аудитории</th>
+                </tr>
+                {% for i in range(n) %}
+                    <tr>
+                        <td>
+                            {{ df_date_room.loc[i, 'event_date'] }}
+                        </td>
+                        <td>
+                                {% if selected_date ==  df_date_room.loc[i, 'event_date'] %}
+                                    {{ render_multiple_select('free_rooms', 'full_room_name', 'room_id', df_free_rooms, selected_room_id) }}
+                                {% else %}
+                                <form action="" method="post">
+                                    Кол-во доступных аудиторий: {{ df_date_room.loc[i, 'free_room_count'] }}
+                                    <input type="date" value="{{ df_date_room.loc[i, 'event_date'] }}"  name="event_date" hidden />
+                                    <input type="text" value="{{event_name}}"  name="event_name" hidden />
+                                    <input type="submit" name="date_next" value="Выбрать" 
+                                        {% if df_date_room.loc[i, 'free_room_count'] == 0 %}
+                                            disabled
+                                        {% endif %}
+                                    />
+                            </form>  
+                            {% endif %}                   
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endmacro %}
+
+        {% macro render_radio_box(df_free_dates) %}
+            {% for i in range(len(df_free_dates)) %}
+                <div class="flex row">
+                    {{ df_free_dates.loc[i, 'event_date'] }}
+                    <input type="radio" name="event_date" value="{{ df_free_dates.loc[i, 'event_date'] }}" checked="checked" />
+                </div>
+            {% endfor %}
+        {% endmacro %}
+
+        {% macro render_table_room_date(df_room_date, df_free_date, selected_room) %}
+            {% set n = len(df_room_date) %}    
+            <table class="table">
+                <tr>
+                    <th>Аудитория</th>
+                    <th>Даты</th>
+                </tr>
+                {% for i in range(n) %}
+                    <tr>
+                        <td>
+                            {{ df_room_date.loc[i, 'room_name'] }}
+                        </td>
+                        <td>
+                            {% if selected_room ==  df_room_date.loc[i, 'room_id'] %}
+                                {{ render_radio_box(df_free_dates) }}
+                            {% else %}
+                                <form action="" method="post">
+                                    Кол-во доступных дат: {{ df_room_date.loc[i, 'free_date_count'] }}
+                                    <input type="text" value="{{ df_room_date.loc[i, 'room_id'] }}"  name="room_id" hidden />
+                                    <input type="text" value="{{event_name}}"  name="event_name" hidden />
+                                    <input type="submit" name="room_next" value="Выбрать" 
+                                        {% if df_room_date.loc[i, 'free_date_count'] == 0 %}
+                                            disabled
+                                        {% endif %}
+                                    />
+                                </form>
+                            {% endif %}                   
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endmacro %}
+
+    </head>
+    <body>
+        <div class = "menu">
+            <ul>
+                <li class = "active">
+                    <a href = {{ url_for("new_event") }}>
+                        Новое мероприятие
+                    </a>
+                </li>
+                <li>
+                    <a href = {{ url_for("register_event") }}>
+                        Запись на мероприятие
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class = "block">
+            <p>
+                <form action="{{ url_for('index') }}" method="post">
+                   <p><input type="submit" value="Назад" name="back"/></p> 
+                </form>
+            </p>
+            <form action = "" method = "post">
+                <p>
+                    <label>
+                        Название мероприятия:
+                        <input type="text" name="event_name" value="{{event_name}}"/>
+                    </label>
+                    <p>Диапазон дат:</p>
+                    <p><label>от
+                        <input type="date" min="{{min_date}}" value="{{date_from}}" name="date_from" />
+                    </label>
+                    <label>до
+                        <input type="date" min="{{min_date}}" value="{{date_to}}" name="date_to" />
+                    </label>
+                    </p>
+                    <p><input type="submit" name="find" value="Найти"></p>
+                    <p></p>
+                    <p>
+                        {% if is_date_state %}
+                            <input type="submit" name="change_mode" class="change_mode" value="Искать по аудитории">
+                        {% else %}
+                            <input type="submit" name="change_mode" class="change_mode" value="Искать по дате">
+                        {% endif %}
+                    </p>
+                        {% if is_date_state %}
+                            {{ render_table_date_room(df_date_rooms, df_free_rooms, event_date) }}
+                        {% else %}
+                            {{ render_table_room_date(df_room_dates, df_free_dates, room_id) }}
+                        {% endif %}
+                    <p>
+                    <p>
+                        {{ render_number_input(df_roles, entered_role_count) }}
+                    </p>
+                        <input type="submit" name="add" value="Добавить" />
+                        {% if add_check %}
+                            {% if event_name and event_date %}
+                                <meta http-equiv="refresh" content="0;url={{url_for('index')}}">
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </p>
+            </form>
+        </div>
+    </body>
+</html>

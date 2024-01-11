@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel = "stylesheet" type = "text/css" href = "/static/css/style.css" />
+        <title> Новый организатор </title>
+    </head>
+    <body>
+        <div class = "menu">
+            <ul>
+                <li class = "active">
+                    <a href = {{ url_for("new_manager") }}>
+                        Новый организатор
+                    </a>
+                </li>
+                <li>
+                    <a href = {{ url_for("register_event") }}>
+                        Запись на мероприятие
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class = "block">
+            <p>
+                <form action = '{{ url_for("index") }}' method = "get">
+                    <p>
+                        <label>
+                            Номер телефона:
+                            <input type = "text" name = "new_manager_id" maxlength="11"/>
+                        </label>
+                    </p>
+                    <p>
+                        ФИО:
+                        <input type = "text" name = "new_manager_name" />
+                    </p>
+                    
+                    <p><input type = "submit" value = "Добавить"/>
+                        <input type = "submit" value = "Вернуться" /></p>
+                </form> 
+            </p>
+        </div>
+    </body>
+</html>

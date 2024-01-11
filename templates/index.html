@@ -1,0 +1,150 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+        <title> Организовать мероприятие </title>
+
+        {% macro render_select(select_name, vis_field, val_field, combo_box, id) %}           
+                <select name='{{select_name}}'>          
+                    {% for i in range(len(combo_box)) %}   
+                        <option 
+                            value="{{ combo_box.loc[i, val_field] }}" 
+                            {% if combo_box.loc[i, val_field] == id %} selected {% endif %}>
+                            {{combo_box.loc[i, vis_field]}}
+                        </option>          
+                            {% endfor %}         
+                </select> 
+        {% endmacro %}
+
+        {% macro render_multiple_select(select_name, vis_field, val_field, combo_box, selected_id) %}
+            <select name='{{select_name}}' class='select_table' size='{{len(combo_box)}}' multiple>          
+                {% for i in range(len(combo_box)) %}   
+                    <option 
+                        value="{{ combo_box.loc[i, val_field] }}" 
+                        {% if combo_box.loc[i, val_field] in selected_id %} selected {% endif %}>
+                        {{combo_box.loc[i, vis_field]}}
+                    </option>          
+                {% endfor %}         
+            </select> 
+        {% endmacro %}
+
+        {% macro render_number_input(df_roles) %}
+            {% for i in range(len(df_roles)) %}
+                <p>{{ df_roles.loc[i, 'role_name'] }}
+                    <input 
+                        name="{{ df_roles.loc[i, 'role_id'] }}" 
+                        type="number" 
+                        min="0" 
+                        value="{{ df_roles.loc[i, 'role_amount'] }}"
+                        {% if df_roles.loc[i, 'role_amount'] %}
+                            disabled
+                        {% endif %}
+                    />
+                </p>
+            {% endfor %}
+        {% endmacro %}
+
+        {% macro render_events(table_name, df_events, edit_field, schedule_id, df_rooms, selected_rooms, df_roles) %}
+            <p>
+                <h3>{{table_name}} </h3>
+            </p>
+            {% set n = len(df_events) %}
+            <table class="table">
+                <tr>
+                    {% for name in df_events.dtypes.index %}
+                        {% if name != 'schedule_id' %}
+                            <th>{{name}}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                <tbody>
+                    {% for i in range(n) %}
+                        <tr>
+                            <td>{{df_events.loc[i, 'Название']}}</td>
+                            <td>{{df_events.loc[i, 'Дата']}}</td>
+                            <td>
+                                {% if schedule_id ==  df_events.loc[i, 'schedule_id'] and edit_field == 'room' %}
+                                    <form action='' method='post'>
+                                        {{ render_multiple_select('rooms', 'full_room_name', 'room_id', df_rooms, selected_rooms) }}
+                                        <input type="hidden" value="{{df_events.loc[i, 'schedule_id']}}" name="schedule_id">
+                                        <input type="submit" name="room_save", value="Сохранить" />
+                                        <input type="submit" name="cancel" value="Назад" />
+                                    </form>
+                                {% else %}
+                                    <form action='' method='post'>
+                                        {% if not df_events.loc[i, 'Аудитории'] %}
+                                            Не заполнено
+                                        {% else %}
+                                            {{ df_events.loc[i, 'Аудитории'] }}
+                                        {% endif %} <br>
+                                        <input type="hidden" value="{{df_events.loc[i, 'schedule_id']}}" name="schedule_id">
+                                        <input type="hidden" value="{{df_events.loc[i, 'Дата']}}" name="event_date">
+                                        <input type="submit" name="room_edit" value="Редактировать">
+                                    </form>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if schedule_id ==  df_events.loc[i, 'schedule_id'] and edit_field == 'role' %}
+                                    <form action='' method='post'>
+                                        {{ render_number_input(df_roles) }}
+                                        <input type="hidden" value="{{df_events.loc[i, 'schedule_id']}}" name="schedule_id">
+                                        <input type="submit" name="role_save", value="Сохранить" />
+                                        <input type="submit" name="cancel" value="Назад" />
+                                    </form>
+                                {% else %}
+                                    <form action='' method='post'>
+                                        {% if not df_events.loc[i, 'Состав'] %}
+                                            Не заполнено
+                                        {% else %}
+                                            {{ df_events.loc[i, 'Состав'] }}
+                                        {% endif %} <br>
+                                        <input type="hidden" value="{{df_events.loc[i, 'schedule_id']}}" name="schedule_id">
+                                        <input type="submit" name="role_edit" value="Редактировать">
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endmacro %}
+
+    </head>
+    <body>
+        <div class = "menu">
+            <ul>
+                <li class = "active">
+                    <a href={{ url_for("index") }}>
+                        Организовать мероприятие
+                    </a>
+                </li>
+                <li>
+                    <a href={{ url_for("register_event") }}>
+                        Запись на мероприятие
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class = "block">
+            <p>
+                <div class="flex row">
+                    <form action='' method ="get">
+                        Организатор:
+                            {{ render_select("manager", "worker_name", "worker_id", combo_box, manager_id) }}
+                        <input type="submit" value="Найти">
+                    </form>
+                    <form action = {{ url_for("new_manager") }} method = "get">
+                        <input type = "submit" value = "Добавить">
+                    </form>
+                </div>
+            </p>
+            <p></p>
+            {{ render_events('Ожидаемые мероприятия', df_events, edit_field, schedule_id, df_rooms, selected_rooms, df_roles) }}
+            <p>
+                <form action='{{ url_for("new_event") }}' method ="post">
+                    <input type="submit" value="Новое мероприятие" name="new_event">
+                </form>
+            </p>
+        </div>
+    </body>
+</html>
